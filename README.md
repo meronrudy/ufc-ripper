@@ -176,6 +176,18 @@ That's it.
 3. Optionally, look through the configuration to change any download settings (video quality, audio quality, etc..) to
    your needs
 
+### Downloading videos from a CSV of links
+
+To download videos from a CSV of links, you can use the new CLI command `download-from-csv`. This command reads a CSV file, extracts the links, and downloads each video using the existing `start_download` function.
+
+#### Usage
+
+```sh
+ufc-ripper download-from-csv <path-to-csv-file>
+```
+
+Replace `<path-to-csv-file>` with the path to your CSV file containing the links.
+
 ## Mention-worthy features
 
 ### Advanced search
