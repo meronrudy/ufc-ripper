@@ -7,6 +7,11 @@ def get_vod_stream_url(vod_id):
     response = requests.get(url)
     response.raise_for_status()
     json_response = response.json()
+    player_url_callback = json_response['playerUrlCallback']
+    
+    response = requests.get(player_url_callback)
+    response.raise_for_status()
+    json_response = response.json()
     return json_response['hls'][0]['url']
 
 def generate_vod_download_config(config, vod, is_restart):
@@ -25,6 +30,7 @@ def generate_vod_download_config(config, vod, is_restart):
     format_id = config['format_id']
     metadata = config['metadata']
     dl_args = config['dl_args']
+    custom_format = vod.get('custom_format', '')
 
     title = vod['title']
     hls = vod['hls']
@@ -36,7 +42,7 @@ def generate_vod_download_config(config, vod, is_restart):
     concur_frags_string = str(concur_frags)
 
     arg_setup = [
-        "--format", format_id if cus_format else default_format,
+        "--format", custom_format if custom_format else (format_id if cus_format else default_format),
         "--merge-output-format", merge_ext,
         "--output", dl_path,
         "--progress-template", '{"status": "%(progress.status)s", "total_size": %(progress.total_bytes_estimate)d, "dl_size": %(progress.downloaded_bytes)d, "size": "%(progress._total_bytes_estimate_str)s", "speed": "%(progress._speed_str)s", "eta": "%(progress._eta_str)s", "vcodec": "%(info.vcodec)s"}',
@@ -56,13 +62,16 @@ def generate_vod_download_config(config, vod, is_restart):
     return final_title, arg_setup
 
 def download_video(vod, config, is_restart=False):
-    final_title, dl_config = generate_vod_download_config(config, vod, is_restart)
-    ydl_opts = {
-        'progress_hooks': [lambda d: print(f"Status: {d['status']}, Downloaded: {d['downloaded_bytes']} bytes")]
-    }
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        ydl.download(dl_config)
-    print(f"Download completed: {final_title}")
+    try:
+        final_title, dl_config = generate_vod_download_config(config, vod, is_restart)
+        ydl_opts = {
+            'progress_hooks': [lambda d: print(f"Status: {d['status']}, Downloaded: {d['downloaded_bytes']} bytes")]
+        }
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            ydl.download(dl_config)
+        print(f"Download completed: {final_title}")
+    except Exception as e:
+        print(f"Error: {e}")
 
 if __name__ == "__main__":
     config = {
